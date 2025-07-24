@@ -1,0 +1,286 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inner Garment - Advanced</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #121212;
+      color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+      direction: ltr;
+    }
+    h1 {
+      text-align: center;
+      font-size: 28px;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      background: #1e1e1e;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 20px;
+      font-size: 16px;
+      resize: none;
+      box-sizing: border-box;
+    }
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+    }
+    button {
+      flex: 1;
+      margin: 0 5px;
+      padding: 12px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .save {
+      background-color: #4caf50;
+      color: white;
+    }
+    .discard {
+      background-color: #f44336;
+      color: white;
+    }
+    .archive-section {
+      margin-top: 30px;
+      background-color: #222;
+      padding: 15px;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+    .archive-section h2 {
+      margin-top: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .clear-btn {
+      background: #d32f2f;
+      border: none;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .entry {
+      border-bottom: 1px solid #444;
+      padding: 10px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .entry:last-child {
+      border-bottom: none;
+    }
+    .entry-content {
+      max-width: 75%;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .entry-time {
+      color: #bbb;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+    .entry-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    .btn {
+      background: #555;
+      border: none;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .btn.restore {
+      background: #1976d2;
+    }
+    .btn.delete {
+      background: #d32f2f;
+    }
+  </style>
+</head>
+<body>
+  <h1>Inner Garment - Advanced</h1>
+  <p>What have you kept inside yourself today?</p>
+  <textarea id="input" placeholder="Write your thoughts here..."></textarea>
+  <div class="actions">
+    <button class="save" onclick="saveNote()">Save (Closet)</button>
+    <button class="discard" onclick="discardNote()">Discard (Trash)</button>
+  </div>
+
+  <div class="archive-section" id="closetSection">
+    <h2>
+      Closet (Saved Notes)
+      <button class="clear-btn" onclick="clearCloset()">Clear All</button>
+    </h2>
+    <div id="closetEntries"></div>
+  </div>
+
+  <div class="archive-section" id="trashSection">
+    <h2>
+      Trash (Discarded Notes)
+      <button class="clear-btn" onclick="clearTrash()">Clear All</button>
+    </h2>
+    <div id="trashEntries"></div>
+  </div>
+
+  <script>
+    const input = document.getElementById('input');
+    const closetEntries = document.getElementById('closetEntries');
+    const trashEntries = document.getElementById('trashEntries');
+
+    // LocalStorage keys
+    const CLOSET_KEY = 'innerGarmentCloset';
+    const TRASH_KEY = 'innerGarmentTrash';
+
+    // Load data from localStorage
+    let closet = JSON.parse(localStorage.getItem(CLOSET_KEY)) || [];
+    let trash = JSON.parse(localStorage.getItem(TRASH_KEY)) || [];
+
+    // Save data to localStorage
+    function saveData() {
+      localStorage.setItem(CLOSET_KEY, JSON.stringify(closet));
+      localStorage.setItem(TRASH_KEY, JSON.stringify(trash));
+    }
+
+    // Render entries to DOM
+    function renderEntries() {
+      closetEntries.innerHTML = '';
+      trashEntries.innerHTML = '';
+
+      closet.forEach((entry, index) => {
+        const el = createEntryElement(entry.text, entry.time);
+        const buttons = createEntryButtons(index, 'closet');
+        el.appendChild(buttons);
+        closetEntries.appendChild(el);
+      });
+
+      trash.forEach((entry, index) => {
+        const el = createEntryElement(entry.text, entry.time);
+        const buttons = createEntryButtons(index, 'trash');
+        el.appendChild(buttons);
+        trashEntries.appendChild(el);
+      });
+    }
+
+    function createEntryElement(text, time) {
+      const container = document.createElement('div');
+      container.className = 'entry';
+
+      const content = document.createElement('div');
+      content.className = 'entry-content';
+      content.textContent = text;
+
+      const timestamp = document.createElement('div');
+      timestamp.className = 'entry-time';
+      timestamp.textContent = time;
+
+      container.appendChild(content);
+      container.appendChild(timestamp);
+
+      return container;
+    }
+
+    function createEntryButtons(index, type) {
+      const btnContainer = document.createElement('div');
+      btnContainer.className = 'entry-buttons';
+
+      if(type === 'closet') {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn delete';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.onclick = () => {
+          if(confirm('Delete this note permanently?')) {
+            closet.splice(index, 1);
+            saveData();
+            renderEntries();
+          }
+        };
+        btnContainer.appendChild(deleteBtn);
+      }
+      else if(type === 'trash') {
+        const restoreBtn = document.createElement('button');
+        restoreBtn.className = 'btn restore';
+        restoreBtn.textContent = 'Restore';
+        restoreBtn.onclick = () => {
+          const entry = trash.splice(index,1)[0];
+          closet.unshift(entry);
+          saveData();
+          renderEntries();
+        };
+        btnContainer.appendChild(restoreBtn);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn delete';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.onclick = () => {
+          if(confirm('Delete this note permanently?')) {
+            trash.splice(index, 1);
+            saveData();
+            renderEntries();
+          }
+        };
+        btnContainer.appendChild(deleteBtn);
+      }
+
+      return btnContainer;
+    }
+
+    function saveNote() {
+      const value = input.value.trim();
+      if(value === '') return;
+      const time = new Date().toLocaleString();
+      closet.unshift({text: value, time: time});
+      saveData();
+      renderEntries();
+      input.value = '';
+    }
+
+    function discardNote() {
+      const value = input.value.trim();
+      if(value === '') return;
+      const time = new Date().toLocaleString();
+      trash.unshift({text: value, time: time});
+      saveData();
+      renderEntries();
+      input.value = '';
+    }
+
+    function clearCloset() {
+      if(confirm('Clear all saved notes?')) {
+        closet = [];
+        saveData();
+        renderEntries();
+      }
+    }
+
+    function clearTrash() {
+      if(confirm('Clear all discarded notes permanently?')) {
+        trash = [];
+        saveData();
+        renderEntries();
+      }
+    }
+
+    // Initial render
+    renderEntries();
+  </script>
+</body>
+</html>
